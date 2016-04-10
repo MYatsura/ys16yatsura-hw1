@@ -17,7 +17,7 @@ public class SumTimerTest {
     
     // We use the same parameter N for all tests
     private static final double PARAM = 1000.0;
-    private static final double MAX_NUM_THREADS = 25;
+    private static final double MAX_NUM_THREADS = 20;
     
     @Test
     public void testThreadsAndUtilConcurrent() {
