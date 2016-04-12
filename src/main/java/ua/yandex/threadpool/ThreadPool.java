@@ -9,46 +9,88 @@ import java.util.List;
  * @author Maksym Yatsura
  */
 public class ThreadPool {
-    
+
     private int numThreads;
-    private int numTask;
     private Thread[] threads;
     private int actualNumTask = 0;
     private int firstFreeThread = 0;
-    private Runnable[] tasks = new Runnable[numTask];
-    private List<Runnable> taskQueue = 
-            Collections.synchronizedList(new LinkedList<Runnable>());
+    private TaskRunner[] taskRunners;
+    private List<Runnable> taskQueue
+            = Collections.synchronizedList(new LinkedList<Runnable>());
+    private boolean active = false;
 
-    public ThreadPool(int numThreads, int numTask) {
-        this.numThreads = numThreads;
-        this.numTask = numTask;
-        this.threads = new Thread[numThreads];
-        tasks = new Runnable[numThreads];
-        
-    }
-    
-    public synchronized void pushTask(Runnable task) {
-        if(actualNumTask < numTask) {
-            tasks[actualNumTask++] = task;
-            threads[firstFreeThread] = new Thread(task);
-            firstFreeThread = findFirstFreeThread();
-        } else {
-            taskQueue.add(task);
+    private class TaskRunner implements Runnable {
+
+        private final int id;
+        private boolean active = true;
+
+        public TaskRunner(int id) {
+            this.id = id;
         }
-    }
-    
-    public boolean hasFreeThreads() {
-        return actualNumTask < numTask;
-    }
-    
-    private int findFirstFreeThread() {
-        for(int i = 0; i < numThreads; i++) {
-            if(!threads[i].isAlive()) {
-                return i;
+
+        @Override
+        public void run() {
+            while (active) {
+                if (!taskQueue.isEmpty()) {
+                    Runnable task = taskQueue.get(0);
+                    taskQueue.remove(0);
+                    if (task != null) {
+                        task.run();
+                    }
+                }
             }
         }
-        
-        return -1;
+
+        public void disable() {
+            active = false;
+        }
+
+    }
+
+    public ThreadPool() {
+        init(10);
+    }
+
+    public ThreadPool(int numThreads) {
+        init(numThreads);
     }
     
+    private void init(int numThreads) {
+        this.numThreads = numThreads;
+        threads = new Thread[numThreads];
+        taskRunners = new TaskRunner[numThreads];
+        for (int i = 0; i < numThreads; i++) {
+            taskRunners[i] = new TaskRunner(i);
+            threads[i] = new Thread(taskRunners[i]);
+        }        
+    }
+
+    public void activate() {
+        active = true;
+        for (int i = 0; i < numThreads; i++) {
+            threads[i].start();
+        }
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public synchronized boolean pushTask(Runnable task) {
+        if (!active) {
+            return false;
+        }
+        taskQueue.add(task);
+        return true;
+    }
+
+    public void deactivate() {
+
+        for (int i = 0; i < numThreads; i++) {
+            taskRunners[i].disable();
+        }
+        
+        active = false;
+    }
+
 }
