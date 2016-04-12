@@ -41,7 +41,11 @@ public class ThreadPoolTest {
         int numTask = 40;
         TestTask[] tasks = new TestTask[numTask];
         taskIdSet.clear();
-
+        Thread.sleep(500);
+        Set expSet = new HashSet<>();
+        for(int i = 0; i < numTask; i++) {
+            expSet.add(i);
+        }
         
         
         for(int i = 0; i < numTask; i++) {
@@ -54,11 +58,8 @@ public class ThreadPoolTest {
         
         Thread.sleep(500);
         threadPool.deactivate();
-        Thread.sleep(500);
-        Set expSet = new HashSet<>();
-        for(int i = 0; i < numTask; i++) {
-            expSet.add(i);
-        }
+        while(threadPool.isActive());
+        
         assertEquals(expSet, taskIdSet);
     }
     
@@ -70,6 +71,10 @@ public class ThreadPoolTest {
         int numTask = 1000;
         TestTask[] tasks = new TestTask[numTask];
         taskIdSet.clear();
+        Set expSet = new HashSet<>();
+        for(int i = 0; i < numTask; i++) {
+            expSet.add(i);
+        }
 
         
         
@@ -83,11 +88,8 @@ public class ThreadPoolTest {
         
         Thread.sleep(500);
         threadPool.deactivate();
-        Thread.sleep(500);
-        Set expSet = new HashSet<>();
-        for(int i = 0; i < numTask; i++) {
-            expSet.add(i);
-        }
+        while(threadPool.isActive());
+        
         assertEquals(expSet, taskIdSet);
         
     }
